@@ -459,6 +459,7 @@
     </div>
     <div class="action-row">
       <button class="btn-ghost btn-small" id="checkShowBtn">Show</button>
+      <button class="btn-ghost btn-small" id="checkClearBtn">Clear</button>
     </div>
     <div class="meter-wrap">
       <div class="meter-track">
@@ -503,6 +504,7 @@
 
   const checkInput = document.getElementById('checkInput');
   const checkShowBtn = document.getElementById('checkShowBtn');
+  const checkClearBtn = document.getElementById('checkClearBtn');
   const checkStrengthText = document.getElementById('checkStrengthText');
   const csegs = [1,2,3,4,5].map(n => document.getElementById('cseg'+n));
 
@@ -622,6 +624,14 @@
     checkVisible = !checkVisible;
     checkInput.type = checkVisible ? "text" : "password";
     checkShowBtn.textContent = checkVisible ? "Hide" : "Show";
+  });
+
+  checkClearBtn.addEventListener('click', () => {
+    checkInput.value = "";
+    checkVisible = false;
+    checkInput.type = "password";
+    checkShowBtn.textContent = "Show";
+    renderStrength("", csegs, checkStrengthText);
   });
 
   // start blank — nothing generated or shown until the user acts
