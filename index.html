@@ -110,12 +110,27 @@
     border-radius: 4px;
     padding: 28px;
     position:relative;
+    margin-bottom: 24px;
   }
   .panel::before{
     content:"";
     position:absolute; left:0; top:18px; bottom:18px; width:2px;
     background: linear-gradient(var(--cyan), transparent 80%);
     opacity:.7;
+  }
+
+  .panel-title{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+    color: var(--cyan);
+    margin: 0 0 20px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel-title .num{
+    color:#06171a; background:var(--cyan);
+    width:18px; height:18px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:800;
   }
 
   .field-label{
@@ -220,14 +235,25 @@
     font-size: clamp(14px, 2.4vw, 19px);
     letter-spacing: 0.03em;
   }
+  .output input::placeholder{ color: var(--muted); letter-spacing:normal; }
   .copy-btn{
     background: rgba(46,230,216,0.1);
     color: var(--cyan);
     border: 1px solid rgba(46,230,216,0.3);
     padding: 9px 16px;
     font-size:11px;
+    flex-shrink:0;
   }
   .copy-btn:hover{ background: rgba(46,230,216,0.18); }
+  .reveal-btn{
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--panel-line);
+    padding: 9px 14px;
+    font-size:11px;
+    flex-shrink:0;
+  }
+  .reveal-btn:hover{ color:var(--text); border-color: rgba(255,255,255,0.2); }
 
   .meter-wrap{ margin-bottom: 6px; }
   .meter-track{
@@ -250,8 +276,16 @@
   }
   .meter-label .strength-text{ font-weight:700; }
 
+  .hint{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color: var(--muted);
+    margin-top: -10px;
+    margin-bottom: 18px;
+  }
+
   .scope{
-    margin-top:44px;
+    margin-top:24px;
     padding-top:22px;
     border-top:1px solid var(--panel-line);
     font-family:'JetBrains Mono', monospace;
@@ -273,9 +307,11 @@
 <div class="wrap">
   <div class="eyebrow"><span class="dot"></span>KEY GENERATION &middot; CLIENT-SIDE</div>
   <h1>Password<br><span>Forge.</span></h1>
-  <p class="lede">Set a length and a character pool, then forge a password entirely in this tab. <b>Nothing is sent anywhere</b> &mdash; generation and strength scoring both run locally, the same logic as the original script.</p>
+  <p class="lede">Set a length and a character pool, then forge a password entirely in this tab &mdash; or type/paste your own to check its strength. <b>Nothing is sent anywhere</b>, generation and strength scoring both run locally.</p>
 
   <div class="panel">
+    <div class="panel-title"><span class="num">1</span>Generate</div>
+
     <div class="field-label">Length <span class="val" id="lenVal">16</span></div>
     <input type="range" id="lenSlider" min="4" max="64" value="16">
 
@@ -290,9 +326,15 @@
       <button class="btn-primary" id="genBtn">Forge Password</button>
       <button class="btn-ghost" id="clearBtn">Clear</button>
     </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title"><span class="num">2</span>Password &amp; Strength</div>
+    <div class="hint">Empty by default &mdash; forge one above, type your own, or paste an existing password to check it.</div>
 
     <div class="output">
-      <input type="text" id="pwOut" readonly placeholder="Your password will appear here">
+      <input type="password" id="pwOut" placeholder="Type, paste, or forge a password&hellip;">
+      <button class="reveal-btn" id="revealBtn">Show</button>
       <button class="copy-btn" id="copyBtn">Copy</button>
     </div>
 
@@ -312,7 +354,7 @@
   </div>
 
   <div class="scope">
-    <b>Scope:</b> generation draws from the selected character pools using the browser's cryptographic RNG (<code>crypto.getRandomValues</code>), not Python's <code>random</code> module, since the latter isn't safe for real secrets. Strength scoring mirrors the original rule set &mdash; one point each for lowercase, uppercase, digits, punctuation, and length &ge;15 &mdash; mapped to five bands. This is a generation/scoring tool, not a leaked-password or breach-database check.
+    <b>Scope:</b> generation draws from the selected character pools using the browser's cryptographic RNG (<code>crypto.getRandomValues</code>), not Python's <code>random</code> module, since the latter isn't safe for real secrets. Strength scoring mirrors the original rule set &mdash; one point each for lowercase, uppercase, digits, punctuation, and length &ge;15 &mdash; mapped to five bands, and runs on anything in the field, generated or typed. This is a generation/scoring tool, not a leaked-password or breach-database check.
   </div>
 </div>
 
@@ -331,6 +373,7 @@
   const genBtn = document.getElementById('genBtn');
   const clearBtn = document.getElementById('clearBtn');
   const copyBtn = document.getElementById('copyBtn');
+  const revealBtn = document.getElementById('revealBtn');
   const strengthText = document.getElementById('strengthText');
   const segs = [1,2,3,4,5].map(n => document.getElementById('seg'+n));
 
@@ -393,7 +436,15 @@
   }
 
   genBtn.addEventListener('click', generate);
-  clearBtn.addEventListener('click', () => { pwOut.value = ""; renderStrength(""); });
+  clearBtn.addEventListener('click', () => { pwOut.value = ""; renderStrength(""); pwOut.focus(); });
+  pwOut.addEventListener('input', () => { renderStrength(pwOut.value); });
+
+  revealBtn.addEventListener('click', () => {
+    const showing = pwOut.type === 'text';
+    pwOut.type = showing ? 'password' : 'text';
+    revealBtn.textContent = showing ? 'Show' : 'Hide';
+  });
+
   copyBtn.addEventListener('click', () => {
     if (!pwOut.value) return;
     navigator.clipboard.writeText(pwOut.value).then(() => {
@@ -403,7 +454,8 @@
     });
   });
 
-  generate();
+  // Start blank — no auto-generate on load.
+  renderStrength("");
 </script>
 </body>
 </html>
