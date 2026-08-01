@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KEYFORGE // Password Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0e12;
+    --panel: #101720;
+    --panel-line: rgba(255,255,255,0.06);
+    --cyan: #2ee6d8;
+    --cyan-dim: #1a8f86;
+    --amber: #e8963c;
+    --text: #e7edf0;
+    --muted: #63737d;
+    --danger: #ff5470;
+    --warn: #e8963c;
+    --ok: #2ee6d8;
+    --great: #7cf7a0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+  }
+  /* hex grid backdrop */
+  .hexbg{
+    position:fixed; inset:0;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(46,230,216,0.05), transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(232,150,60,0.04), transparent 45%);
+    z-index:0;
+  }
+  .hexbg::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(30deg, transparent 24%, rgba(46,230,216,.04) 25%, rgba(46,230,216,.04) 26%, transparent 27%, transparent 74%, rgba(46,230,216,.04) 75%, rgba(46,230,216,.04) 76%, transparent 77%),
+      linear-gradient(150deg, transparent 24%, rgba(46,230,216,.04) 25%, rgba(46,230,216,.04) 26%, transparent 27%, transparent 74%, rgba(46,230,216,.04) 75%, rgba(46,230,216,.04) 76%, transparent 77%);
+    background-size: 60px 104px;
+    opacity:0.5;
+  }
+  .frame{
+    position:fixed; inset:14px;
+    border: 1px solid rgba(46,230,216,0.18);
+    pointer-events:none;
+    z-index:1;
+  }
+  .frame::before, .frame::after{
+    content:"";
+    position:absolute;
+    width:70px; height:70px;
+    border: 2px solid var(--cyan);
+    opacity:0.8;
+    filter: drop-shadow(0 0 6px var(--cyan));
+  }
+  .frame::before{ top:-2px; left:-2px; border-right:none; border-bottom:none; clip-path: polygon(0 0, 100% 0, 100% 8%, 8% 8%, 8% 100%, 0 100%);}
+  .frame::after{ bottom:-2px; right:-2px; border-left:none; border-top:none; clip-path: polygon(100% 100%, 0 100%, 0 92%, 92% 92%, 92% 0, 100% 0);}
+
+  .wrap{
+    position:relative; z-index:2;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 64px 32px 80px;
+  }
+  .eyebrow{
+    display:flex; align-items:center; gap:10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px; letter-spacing:.18em;
+    color: var(--amber);
+    text-transform:uppercase;
+    margin-bottom:18px;
+  }
+  .eyebrow .dot{
+    width:7px; height:7px; border-radius:50%;
+    background: var(--amber);
+    box-shadow: 0 0 8px var(--amber);
+  }
+  h1{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:800;
+    font-size: clamp(36px, 6vw, 58px);
+    line-height:1.05;
+    margin: 0 0 20px;
+    color: #fff;
+    text-shadow: 0 0 24px rgba(46,230,216,0.35);
+    letter-spacing:-0.01em;
+  }
+  h1 span{ color: var(--cyan); }
+  .lede{
+    max-width: 640px;
+    font-size:15.5px;
+    line-height:1.65;
+    color: #c4cdd2;
+    margin-bottom: 40px;
+  }
+  .lede b{ color:#fff; font-weight:600; }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 4px;
+    padding: 28px;
+    position:relative;
+  }
+  .panel::before{
+    content:"";
+    position:absolute; left:0; top:18px; bottom:18px; width:2px;
+    background: linear-gradient(var(--cyan), transparent 80%);
+    opacity:.7;
+  }
+
+  .field-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color: var(--muted);
+    margin-bottom:8px;
+    display:flex; justify-content:space-between;
+  }
+  .field-label .val{ color: var(--cyan); }
+
+  input[type=range]{
+    width:100%;
+    accent-color: var(--cyan);
+    height: 4px;
+    margin: 6px 0 22px;
+  }
+
+  .toggles{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px,1fr));
+    gap:10px;
+    margin-bottom: 26px;
+  }
+  .toggle{
+    display:flex; align-items:center; gap:10px;
+    border:1px solid var(--panel-line);
+    background: rgba(255,255,255,0.02);
+    border-radius:3px;
+    padding: 12px 14px;
+    cursor:pointer;
+    transition: border-color .15s, background .15s;
+    user-select:none;
+  }
+  .toggle:hover{ border-color: rgba(46,230,216,0.35); }
+  .toggle.active{
+    border-color: var(--cyan);
+    background: rgba(46,230,216,0.06);
+    box-shadow: inset 0 0 0 1px rgba(46,230,216,0.15);
+  }
+  .toggle .box{
+    width:16px; height:16px;
+    border: 1.5px solid var(--muted);
+    border-radius:3px;
+    flex-shrink:0;
+    position:relative;
+  }
+  .toggle.active .box{ border-color: var(--cyan); background: var(--cyan); }
+  .toggle.active .box::after{
+    content:"";
+    position:absolute; left:3px; top:0px;
+    width:4px; height:8px;
+    border: solid #0a0e12;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .toggle .tlabel{ font-family:'JetBrains Mono', monospace; font-size:13px; color:#d3dade; }
+  .toggle .tsample{ font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--muted); margin-left:auto; }
+
+  .genrow{ display:flex; gap:12px; margin-bottom: 20px; flex-wrap:wrap; }
+  button{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:13px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    border:none;
+    cursor:pointer;
+    padding: 15px 26px;
+    border-radius: 3px;
+    transition: transform .1s, box-shadow .15s;
+  }
+  button:active{ transform: translateY(1px); }
+  .btn-primary{
+    background: var(--cyan);
+    color: #06171a;
+    box-shadow: 0 0 22px rgba(46,230,216,0.35);
+  }
+  .btn-primary:hover{ box-shadow: 0 0 30px rgba(46,230,216,0.55); }
+  .btn-ghost{
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--panel-line);
+  }
+  .btn-ghost:hover{ color:var(--text); border-color: rgba(255,255,255,0.2); }
+
+  .output{
+    display:flex; align-items:center; gap:12px;
+    background: #060a0d;
+    border: 1px solid var(--panel-line);
+    border-radius: 3px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+  }
+  .output input{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    color: var(--cyan);
+    font-family:'JetBrains Mono', monospace;
+    font-size: clamp(14px, 2.4vw, 19px);
+    letter-spacing: 0.03em;
+  }
+  .copy-btn{
+    background: rgba(46,230,216,0.1);
+    color: var(--cyan);
+    border: 1px solid rgba(46,230,216,0.3);
+    padding: 9px 16px;
+    font-size:11px;
+  }
+  .copy-btn:hover{ background: rgba(46,230,216,0.18); }
+
+  .meter-wrap{ margin-bottom: 6px; }
+  .meter-track{
+    height:6px;
+    background: rgba(255,255,255,0.06);
+    border-radius:3px;
+    overflow:hidden;
+    display:flex; gap:3px;
+  }
+  .meter-seg{
+    flex:1; background: rgba(255,255,255,0.06); border-radius:2px;
+    transition: background .2s;
+  }
+  .meter-label{
+    display:flex; justify-content:space-between;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    margin-top:8px;
+    color: var(--muted);
+  }
+  .meter-label .strength-text{ font-weight:700; }
+
+  .scope{
+    margin-top:44px;
+    padding-top:22px;
+    border-top:1px solid var(--panel-line);
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    line-height:1.7;
+    color: var(--muted);
+  }
+  .scope b{ color:#8b9aa2; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="hexbg"></div>
+<div class="frame"></div>
+
+<div class="wrap">
+  <div class="eyebrow"><span class="dot"></span>KEY GENERATION &middot; CLIENT-SIDE</div>
+  <h1>Password<br><span>Forge.</span></h1>
+  <p class="lede">Set a length and a character pool, then forge a password entirely in this tab. <b>Nothing is sent anywhere</b> &mdash; generation and strength scoring both run locally, the same logic as the original script.</p>
+
+  <div class="panel">
+    <div class="field-label">Length <span class="val" id="lenVal">16</span></div>
+    <input type="range" id="lenSlider" min="4" max="64" value="16">
+
+    <div class="toggles">
+      <div class="toggle active" data-set="lc"><div class="box"></div><div class="tlabel">Lowercase</div><div class="tsample">a-z</div></div>
+      <div class="toggle active" data-set="uc"><div class="box"></div><div class="tlabel">Uppercase</div><div class="tsample">A-Z</div></div>
+      <div class="toggle active" data-set="dig"><div class="box"></div><div class="tlabel">Digits</div><div class="tsample">0-9</div></div>
+      <div class="toggle active" data-set="punc"><div class="box"></div><div class="tlabel">Punctuation</div><div class="tsample">!@#$</div></div>
+    </div>
+
+    <div class="genrow">
+      <button class="btn-primary" id="genBtn">Forge Password</button>
+      <button class="btn-ghost" id="clearBtn">Clear</button>
+    </div>
+
+    <div class="output">
+      <input type="text" id="pwOut" readonly placeholder="Your password will appear here">
+      <button class="copy-btn" id="copyBtn">Copy</button>
+    </div>
+
+    <div class="meter-wrap">
+      <div class="meter-track">
+        <div class="meter-seg" id="seg1"></div>
+        <div class="meter-seg" id="seg2"></div>
+        <div class="meter-seg" id="seg3"></div>
+        <div class="meter-seg" id="seg4"></div>
+        <div class="meter-seg" id="seg5"></div>
+      </div>
+      <div class="meter-label">
+        <span>Strength</span>
+        <span class="strength-text" id="strengthText">&mdash;</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scope">
+    <b>Scope:</b> generation draws from the selected character pools using the browser's cryptographic RNG (<code>crypto.getRandomValues</code>), not Python's <code>random</code> module, since the latter isn't safe for real secrets. Strength scoring mirrors the original rule set &mdash; one point each for lowercase, uppercase, digits, punctuation, and length &ge;15 &mdash; mapped to five bands. This is a generation/scoring tool, not a leaked-password or breach-database check.
+  </div>
+</div>
+
+<script>
+  const pools = {
+    lc: "abcdefghijklmnopqrstuvwxyz",
+    uc: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    dig: "0123456789",
+    punc: "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+  };
+  const active = { lc: true, uc: true, dig: true, punc: true };
+
+  const lenSlider = document.getElementById('lenSlider');
+  const lenVal = document.getElementById('lenVal');
+  const pwOut = document.getElementById('pwOut');
+  const genBtn = document.getElementById('genBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const copyBtn = document.getElementById('copyBtn');
+  const strengthText = document.getElementById('strengthText');
+  const segs = [1,2,3,4,5].map(n => document.getElementById('seg'+n));
+
+  lenSlider.addEventListener('input', () => { lenVal.textContent = lenSlider.value; });
+
+  document.querySelectorAll('.toggle').forEach(t => {
+    t.addEventListener('click', () => {
+      const key = t.dataset.set;
+      const activeCount = Object.values(active).filter(Boolean).length;
+      if (active[key] && activeCount === 1) return; // keep at least one pool on
+      active[key] = !active[key];
+      t.classList.toggle('active', active[key]);
+    });
+  });
+
+  function securePassword(length, pool) {
+    const bytes = new Uint32Array(length);
+    crypto.getRandomValues(bytes);
+    let out = "";
+    for (let i = 0; i < length; i++) {
+      out += pool[bytes[i] % pool.length];
+    }
+    return out;
+  }
+
+  function strength(password) {
+    let score = 0;
+    if (/[a-z]/.test(password)) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[!-\/:-@\[-`{-~]/.test(password)) score++;
+    if (password.length >= 15) score++;
+    const labels = ["Weak", "Weak", "Average", "Strong", "Very strong"];
+    const colors = ["var(--danger)", "var(--danger)", "var(--warn)", "var(--ok)", "var(--great)"];
+    const idx = Math.max(0, score - 1);
+    return { label: labels[idx], color: colors[idx], filled: score };
+  }
+
+  function renderStrength(password) {
+    if (!password) {
+      segs.forEach(s => s.style.background = 'rgba(255,255,255,0.06)');
+      strengthText.textContent = '—';
+      strengthText.style.color = 'var(--muted)';
+      return;
+    }
+    const { label, color, filled } = strength(password);
+    segs.forEach((s, i) => { s.style.background = i < filled ? color : 'rgba(255,255,255,0.06)'; });
+    strengthText.textContent = label;
+    strengthText.style.color = color;
+  }
+
+  function generate() {
+    let pool = "";
+    Object.keys(active).forEach(k => { if (active[k]) pool += pools[k]; });
+    if (!pool) return;
+    const length = parseInt(lenSlider.value, 10);
+    const pw = securePassword(length, pool);
+    pwOut.value = pw;
+    renderStrength(pw);
+  }
+
+  genBtn.addEventListener('click', generate);
+  clearBtn.addEventListener('click', () => { pwOut.value = ""; renderStrength(""); });
+  copyBtn.addEventListener('click', () => {
+    if (!pwOut.value) return;
+    navigator.clipboard.writeText(pwOut.value).then(() => {
+      const old = copyBtn.textContent;
+      copyBtn.textContent = "Copied";
+      setTimeout(() => copyBtn.textContent = old, 1200);
+    });
+  });
+
+  generate();
+</script>
+</body>
+</html>
