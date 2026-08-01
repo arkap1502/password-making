@@ -1,37 +1,38 @@
-# ALTRON // Password Inspector
+# ALTRON Password Inspector
 
-A single-file, client-side password generator and strength checker with a futuristic HUD-style interface.
+A little password generator + strength checker I built with a sci-fi HUD look, done as one self-contained HTML file. No backend, no build tools, no installs — just open it in a browser.
 
-## What it does
+## Why
 
-- **Generate** — builds a cryptographically random password from a length you choose (4–64, via slider or number box) and a mix of character pools (lowercase, uppercase, digits, punctuation). The output field stays blank until you press **Generate Password**, and clears again on **Clear**.
-- **Check your own password** — a separate field where you can type or paste any password to see its strength, without ever touching the generator.
-- **Strength meter** — a 5-segment bar scored on: lowercase present, uppercase present, digit present, punctuation present, length ≥ 15. Bands run Weak → Weak → Average → Strong → Very strong. Both the generator and the checker use the same scoring logic, independently.
-- **Show / Copy** — each password field has its own Show button (toggles masking), placed directly under its bar. The generated password also gets a Copy button that copies to the clipboard and shows a brief confirmation.
-- **Robot indicator** — a small animated robot idles with a scanning-eye/blink animation, and switches to a faster "thinking" pulse while a password is being generated.
-- **HUD background** — an animated radial interface built from spinning concentric rings, tick marks, and hex outlines, rendered with SVG and CSS, styled after a sci-fi HUD look. Automatically disables its animations if the OS "reduce motion" setting is on.
+Most password generator sites you find online look the same and half of them you don't fully trust with what you type into them. This one runs 100% in your browser tab. Nothing you generate or type ever leaves the page — open dev tools and check the network tab if you don't believe me, there's nothing to see because there are no requests being made.
 
-## Privacy / security notes
+## What's in it
 
-- Everything runs **entirely in the browser tab**. No password, generated or typed, is ever sent over the network — there are no network calls in this file at all.
-- Random generation uses the Web Crypto API (`crypto.getRandomValues`), not `Math.random()`, so output is suitable for real secrets.
-- The strength check is a simple local rule-of-thumb (character variety + length), not a breach-database or leaked-password check. It won't catch things like reused or dictionary-based passwords.
-- Nothing is stored — passwords exist only in memory in the page and disappear on refresh or Clear.
+**Generate a password**
+Pick a length (drag the slider or just type a number, 4 to 64), choose which character types you want in the mix — lowercase, uppercase, digits, punctuation — and hit Generate Password. The field starts empty and stays that way until you actually generate something, so there's no default password sitting there when you load the page. Show reveals it, Copy grabs it for your clipboard, Clear wipes it.
+
+**Check a password you already have**
+Separate box below the generator. Type or paste a password in and watch the strength meter update live. Same Show/Clear buttons, kept totally separate from the generator so pasting something here never touches what you generated above.
+
+**The little robot**
+Sits up top next to the title, blinks and looks around when idle, then does a faster "thinking" animation while a password is being generated. Purely decorative, but it makes the wait (half a second, on purpose, so it doesn't feel instant/fake) feel like something's actually happening.
+
+**The background**
+Animated HUD-style rings spinning at different speeds, tick marks, some hex outlines, a pulsing core in the middle — all SVG and CSS, no images. Turns itself off if your OS has reduced motion turned on.
+
+## How strength is scored
+
+Nothing fancy — one point each for: has a lowercase letter, has an uppercase letter, has a digit, has punctuation, is 15+ characters long. That's out of 5, mapped to Weak / Weak / Average / Strong / Very strong. It's a quick sanity check, not a real security audit — it won't know if your password is "Password123!" and has been in every breach dump since 2019. For that you'd want something like Have I Been Pwned.
 
 ## Files
 
-- `altron-password-inspector.html` — the entire app (HTML, CSS, and JavaScript in one file). Open it directly in any modern browser; no build step or server required.
+- `altron-password-inspector.html` — everything. Just double-click it or drag it into a browser tab.
 
-## Usage
+## Poking around the code
 
-1. Open `altron-password-inspector.html` in a browser.
-2. **To generate:** set a length, pick which character types to include (at least one must stay on), click **Generate Password**, then **Show** (under the bar) to reveal it or **Copy** to copy it.
-3. **To check an existing password:** type or paste it into the "Check your own password" field and read the strength meter as you type; use **Show** underneath to reveal what you typed.
+- Colors/fonts are CSS variables right at the top of the `<style>` tag if you want to reskin it.
+- The character sets for generation are in the `pools` object near the top of the `<script>` tag.
+- The scoring logic is in the `strength()` function — easy to swap for something stricter (zxcvbn, entropy-based scoring, whatever) if you want more than the quick 5-point check.
+- The background rings/hex bits get built in `buildHud()` and `buildHexField()` — change the numbers in `ringDefs` if you want more or fewer rings, different speeds, etc.
 
-## Customizing
-
-All values live in one HTML file:
-- Colors and fonts are CSS variables at the top of the `<style>` block (`--cyan`, `--amber`, `--bg`, etc.).
-- The character pools used for generation are defined in the `pools` object near the top of the `<script>` block.
-- The strength scoring rules are in the `strength()` function.
-- The HUD background rings, tick counts, and hex spots are generated in `buildHud()` and `buildHexField()`.
+Generation itself uses `crypto.getRandomValues()`, not `Math.random()` — worth keeping if you ever fork this, since `Math.random()` isn't safe for anything you actually care about protecting.
