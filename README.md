@@ -1,60 +1,37 @@
-# KEYFORGE — Password Generator & Strength Checker
+# ALTRON // Password Inspector
 
-A single-file, client-side password tool. Generate strong random passwords or check the strength of one you already have — nothing ever leaves the browser.
+A single-file, client-side password generator and strength checker with a futuristic HUD-style interface.
 
-## Features
+## What it does
 
-- **Generate passwords** with a configurable length (4–64 characters) and choice of character pools:
-  - Lowercase (`a-z`)
-  - Uppercase (`A-Z`)
-  - Digits (`0-9`)
-  - Punctuation (`!@#$…`)
-  - At least one pool must stay enabled.
-- **Check any password** — type or paste a password directly into the field to see its strength, no need to generate one first.
-- **Show/Hide toggle** to reveal or mask the password field (masked by default).
-- **Copy to clipboard** with one click.
-- **Live strength meter** — a 5-segment bar plus a text label (Weak / Average / Strong / Very strong).
-- **Blank by default** — the password field is always empty on page load and after clearing; nothing is pre-filled or auto-generated.
+- **Generate** — builds a cryptographically random password from a length you choose (4–64, via slider or number box) and a mix of character pools (lowercase, uppercase, digits, punctuation). The output field stays blank until you press **Generate Password**, and clears again on **Clear**.
+- **Check your own password** — a separate field where you can type or paste any password to see its strength, without ever touching the generator.
+- **Strength meter** — a 5-segment bar scored on: lowercase present, uppercase present, digit present, punctuation present, length ≥ 15. Bands run Weak → Weak → Average → Strong → Very strong. Both the generator and the checker use the same scoring logic, independently.
+- **Show / Copy** — each password field has its own Show button (toggles masking), placed directly under its bar. The generated password also gets a Copy button that copies to the clipboard and shows a brief confirmation.
+- **Robot indicator** — a small animated robot idles with a scanning-eye/blink animation, and switches to a faster "thinking" pulse while a password is being generated.
+- **HUD background** — an animated radial interface built from spinning concentric rings, tick marks, and hex outlines, rendered with SVG and CSS, styled after a sci-fi HUD look. Automatically disables its animations if the OS "reduce motion" setting is on.
 
-## How it works
+## Privacy / security notes
 
-### Generation
-Passwords are generated using the browser's cryptographically secure random number generator, [`crypto.getRandomValues`](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues) — **not** a non-cryptographic RNG like Python's `random` module or `Math.random()`, since those are unsafe for generating real secrets.
-
-### Strength scoring
-Scoring is rule-based and runs on whatever is in the field, whether generated or typed/pasted. One point is awarded for each of:
-
-| Criterion | Points |
-|---|---|
-| Contains a lowercase letter | 1 |
-| Contains an uppercase letter | 1 |
-| Contains a digit | 1 |
-| Contains punctuation | 1 |
-| Length ≥ 15 characters | 1 |
-
-Total score maps to a band:
-
-| Score | Label |
-|---|---|
-| 1 | Weak |
-| 2 | Weak |
-| 3 | Average |
-| 4 | Strong |
-| 5 | Very strong |
-
-**Note:** This is a generation/scoring tool only — it does **not** check passwords against breach databases or leaked-password lists.
-
-## Privacy
-
-Everything runs locally in the browser tab. No network requests are made, no data is sent to a server, and nothing is stored (no `localStorage`/cookies) — closing or refreshing the tab clears everything.
-
-## Usage
-
-1. Open `keyforge.html` in any modern browser.
-2. To generate: adjust the length slider, toggle the character pools you want, and click **Forge Password**.
-3. To check your own: click into the password field and type or paste a password — the strength meter updates as you type.
-4. Click **Show** to reveal the password in plain text, **Copy** to copy it to your clipboard, or **Clear** to empty the field.
+- Everything runs **entirely in the browser tab**. No password, generated or typed, is ever sent over the network — there are no network calls in this file at all.
+- Random generation uses the Web Crypto API (`crypto.getRandomValues`), not `Math.random()`, so output is suitable for real secrets.
+- The strength check is a simple local rule-of-thumb (character variety + length), not a breach-database or leaked-password check. It won't catch things like reused or dictionary-based passwords.
+- Nothing is stored — passwords exist only in memory in the page and disappear on refresh or Clear.
 
 ## Files
 
-- `keyforge.html` — the entire app (HTML, CSS, and JS in one file). No build step or dependencies required beyond a font import from Google Fonts.
+- `altron-password-inspector.html` — the entire app (HTML, CSS, and JavaScript in one file). Open it directly in any modern browser; no build step or server required.
+
+## Usage
+
+1. Open `altron-password-inspector.html` in a browser.
+2. **To generate:** set a length, pick which character types to include (at least one must stay on), click **Generate Password**, then **Show** (under the bar) to reveal it or **Copy** to copy it.
+3. **To check an existing password:** type or paste it into the "Check your own password" field and read the strength meter as you type; use **Show** underneath to reveal what you typed.
+
+## Customizing
+
+All values live in one HTML file:
+- Colors and fonts are CSS variables at the top of the `<style>` block (`--cyan`, `--amber`, `--bg`, etc.).
+- The character pools used for generation are defined in the `pools` object near the top of the `<script>` block.
+- The strength scoring rules are in the `strength()` function.
+- The HUD background rings, tick counts, and hex spots are generated in `buildHud()` and `buildHexField()`.
