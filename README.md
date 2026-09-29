@@ -1,38 +1,46 @@
 # ALTRON Password Inspector
 
-A little password generator + strength checker I built with a sci-fi HUD look, done as one self-contained HTML file. No backend, no build tools, no installs — just open it in a browser.
+A password generator + strength checker with a sci-fi aurora look. No backend, no build tools, no installs — just open it in a browser.
 
 ## Why
 
-Most password generator sites you find online look the same and half of them you don't fully trust with what you type into them. This one runs 100% in your browser tab. Nothing you generate or type ever leaves the page — open dev tools and check the network tab if you don't believe me, there's nothing to see because there are no requests being made.
+Most password generator sites look the same, and half of them you don't fully trust with what you type. This one is offline-first: generating and scoring happen 100% in your browser tab. The only thing that ever touches the network is the opt-in breach check — and even that never sends your password (see below).
 
 ## What's in it
 
 **Generate a password**
-Pick a length (drag the slider or just type a number, 4 to 64), choose which character types you want in the mix — lowercase, uppercase, digits, punctuation — and hit Generate Password. The field starts empty and stays that way until you actually generate something, so there's no default password sitting there when you load the page. Show reveals it, Copy grabs it for your clipboard, Clear wipes it.
+Pick a length (drag the slider or type a number, 4 to 64), choose the character mix — lowercase, uppercase, digits, symbols — and hit Generate Password. The field starts empty and stays that way until you generate something, so there's no default password sitting there on load. Show reveals it, Copy grabs it, Clear wipes it.
 
-**Check a password you already have**
-Separate box below the generator. Type or paste a password in and watch the strength meter update live. Same Show/Clear buttons, kept totally separate from the generator so pasting something here never touches what you generated above.
+**Inspect your own**
+Separate card for passwords you already have. Type or paste one in and the strength meter, checklist, and offline breach screen all update live. Show/Clear here are fully separate from the generator, so pasting never touches what you generated.
 
-**The little robot**
-Sits up top next to the title, blinks and looks around when idle, then does a faster "thinking" animation while a password is being generated. Purely decorative, but it makes the wait (half a second, on purpose, so it doesn't feel instant/fake) feel like something's actually happening.
+**Breach alert**
+Two tiers:
+- *Offline screen (instant, no network)* — every keystroke is checked against a built-in list of the most commonly breached passwords, plus repeated-character and keyboard-sequence patterns.
+- *Online verify (opt-in)* — the "Verify online breach exposure" button queries Have I Been Pwned via k-anonymity: the password is SHA-1 hashed locally and only the first 5 hash characters are sent. A hit shows how many times it appears in known leaks.
 
-**The background**
-Animated HUD-style rings spinning at different speeds, tick marks, some hex outlines, a pulsing core in the middle — all SVG and CSS, no images. Turns itself off if your OS has reduced motion turned on.
+**Entropy readout**
+The status card shows estimated bits of entropy for your length + character mix, with a plain-English verdict after generating.
 
 ## How strength is scored
 
-Nothing fancy — one point each for: has a lowercase letter, has an uppercase letter, has a digit, has punctuation, is 15+ characters long. That's out of 5, mapped to Weak / Weak / Average / Strong / Very strong. It's a quick sanity check, not a real security audit — it won't know if your password is "Password123!" and has been in every breach dump since 2019. For that you'd want something like Have I Been Pwned.
+One point each for: lowercase, uppercase, digits, symbols, length ≥ 15. Out of 5, mapped to Weak / Weak / Average / Strong / Very strong. Quick sanity check, not an audit — pair it with the breach check above for passwords you actually reuse.
 
 ## Files
 
-- `altron-password-inspector.html` — everything. Just double-click it or drag it into a browser tab.
+Keep all three together in the same folder, then double-click `index.html` (or drag it into a browser tab):
+
+- `index.html` — markup only
+- `styles.css` — all styling
+- `script.js` — generation, scoring, breach logic
+
+Note: online breach verify needs internet plus a secure context (`https://` or `localhost`) for hashing. Opened via `file://` it works in most browsers; if yours blocks it you'll get a clear error and the offline screen still works.
 
 ## Poking around the code
 
-- Colors/fonts are CSS variables right at the top of the `<style>` tag if you want to reskin it.
-- The character sets for generation are in the `pools` object near the top of the `<script>` tag.
-- The scoring logic is in the `strength()` function — easy to swap for something stricter (zxcvbn, entropy-based scoring, whatever) if you want more than the quick 5-point check.
-- The background rings/hex bits get built in `buildHud()` and `buildHexField()` — change the numbers in `ringDefs` if you want more or fewer rings, different speeds, etc.
+- Colors/fonts are CSS variables at the top of `styles.css` — reskin from there. Breach-alert styles live in the `Breach alert` section at the bottom.
+- Character sets are in the `pools` object at the top of `script.js`.
+- Scoring is in `strength()` — easy to swap for something stricter (zxcvbn, entropy-based, whatever).
+- Breach logic is `COMMON_PASSWORDS` / `isCommonLocal()` (offline) and `hibpCount()` (online). Tweak the list or timeout there.
 
-Generation itself uses `crypto.getRandomValues()`, not `Math.random()` — worth keeping if you ever fork this, since `Math.random()` isn't safe for anything you actually care about protecting.
+Generation uses `crypto.getRandomValues()`, not `Math.random()` — worth keeping if you fork this, since `Math.random()` isn't safe for anything you care about protecting.
